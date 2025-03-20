@@ -38,13 +38,33 @@ for (let i = 0; i < KEY_SIZE; i++) {
   slices[i] = Buffer.alloc(0)
 }
 
-// Id metiendo cada letra en el grupo que le corresponde
+// Id metiendo cada byte en el grupo que le corresponde
 for (let i = 0; i < cipherText.length; i++) {
+  /*
+   * 0x17 => al 1er trozo
+   * 0x21 => al 2do trozo
+   * 0x20 => al 3er trozo
+   * 0x62 => al 1ero
+   * 0x3c => al 2do
+   * 0x2e => al 3ero
+   * 0x21 => al 1ero
+   * ...
+   */
   const sliceNumber = 0 // ?
-  slices[sliceNumber] =  // concatenar valor anterior y la nueva letra
+  // Podeis usar Buffer.concat([buff1, buff2]) para juntar buffers
+  // y buff.subarray() para seleccionar trozos (id byte a byte)
+  slices[sliceNumber] = null // concatenar valor anterior y la nueva letra
 }
 
-// Usad la función "findLikelyKey" del ejercicio 3 con cada grupo.
+// Usad la función "findLikelyKey" del ejercicio 3 con cada uno de los trozos y juntad las 3 letras resultantes.
+// Por comodidad, podeis usar: ["a", "b", "c"].join("") (que devuelve "abc")
+// Sería equivalente a:
+//   const arr = ["a", "b", "c"]
+//   let joined = ""
+//   for (let i=0; i<arr.length; i++) {
+//      joined = joined + arr[i]
+//   }
+// Y joined sería "abc" al salir del for.
 const key = [].join("")
 
 console.log("Clave detectada:", key.toString())
