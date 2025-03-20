@@ -7,10 +7,31 @@
  */
 
 import { Buffer } from "node:buffer"
-import { randomBytes } from "node:crypto"
 
 function findLikelyKey(cipheredText: Buffer): number {
-  return 0
+  let mostPrintableChars = -1
+  let bestCandidate = -1
+
+  for (let i = 0; i < 255; i++) {
+    let countPrintableChars = 0
+    for (let j = 0; j < cipheredText.length; j++) {
+      const deciphered = i ^ cipheredText[j]
+      if (deciphered >= 0x61 && deciphered <= 0x7a) { // Minusculas
+        // Le damos más peso a estos caracteres que son más comunes
+        countPrintableChars += 10
+      } else if (deciphered >= 0x41 && deciphered <= 0x5e) { // Mayusculas
+        countPrintableChars += 1
+      }
+      // No contamos el resto de los caractéres,
+      // aunque también podriamos comprobar y ponderar otros como signos de puntuación.
+    }
+    if (countPrintableChars > mostPrintableChars) {
+      mostPrintableChars = countPrintableChars
+      bestCandidate = i
+    }
+  }
+
+  return bestCandidate
 }
 
 const ct = Buffer.from(
