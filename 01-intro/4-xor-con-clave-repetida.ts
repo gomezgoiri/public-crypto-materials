@@ -26,6 +26,33 @@
 import { Buffer } from "node:buffer"
 
 function encodeVigenere(text: Buffer, key: string): Buffer {
+  /*
+   * Para aclararos un poco más, podeis consultar la tabla ASCII aquí:
+   *    https://upload.wikimedia.org/wikipedia/commons/1/1b/ASCII-Table-wide.svg
+   *
+   * "HOLA"
+   *   |
+   *   V
+   *  [0x48, 0x4f, 0x4c, 0x41]
+   *
+   * "Si contratar a personas por su mérito...
+   *   |
+   *   V
+   * [0x53, 0x69, 0x20, 0x63, 0x6f, 0x6e,...]
+   *
+   * El cifrado se conseguiría haciendo estos XORs:
+   *
+   * [0x48 xor 0x53, 0x4f xor 0x69, 0x4c xor 0x20, 0x41 xor 0x63, 0x48 xor 0x6f, 0x4f xor 0x6e...]
+   *
+   * Pista: para saber contra qué byte de la clave hacer XOR, podeis usar el operador "%".
+   *
+   *    0 % 3 === 0
+   *    1 % 3 === 1
+   *    2 % 3 === 2
+   *    3 % 3 === 0
+   *    4 % 3 === 1
+   *    ...
+   */
 }
 
 function decodeVigenere(text: Buffer, key: string): Buffer {
