@@ -19,4 +19,9 @@
  *   - Hungarian (hu)
  *
  * Dicho mensaje se encuentra en el fichero "07.txt".
+ *
+ * Puedes usar la función "getCharScore" para conocer la frecuencia
+ * de un caracter en un idioma dado.
  */
+
+import { getCharScore } from "../utils/languages.ts"
