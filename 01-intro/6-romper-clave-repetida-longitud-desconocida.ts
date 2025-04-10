@@ -50,6 +50,22 @@ import { Buffer } from "node:buffer"
  * hammingDistance("Aaaa", "Szbc") = ?
  */
 function hammingDistance(buff1: Buffer, buff2: Buffer): number {
+  // Pista 1: Operador de desplazamiento a la derecha
+  //  0x8 >> 1 === 0x4   (1000 => 0100)
+  //  0x4 >> 1 === 0x2   (0100 => 0010)
+  //  0x5 >> 1 === 0x2   (0101 => 0010)
+  //  0xc >> 1 === 0x6   (1100 => 0110)
+  //  0xe >> 1 === 0x7   (1110 => 0111)
+
+  // Pista 2: Con un AND podemos comprobar el bit que hay en
+  // una posición dada.
+  // Por ejemplo, con 1, podemos saber si el último bit es un 1 o no.
+  //  0x8 & 1 === 0x0   (1000 & 0001 === 0000 => el último bit es un 0)
+  //  0x5 & 1 === 0x1   (0101 & 0001 === 0001 => el último bit es un 1)
+  //  0x4 & 1 === 0x0   (0100 => 0)
+  //  0xe & 1 === 0x1   (1110 => 1)
+
+  // Pista 3: para saber el número de unos, podemos combinar la pista 1 y la 2.
 }
 
 /**
@@ -68,27 +84,36 @@ function scoreKeySize(candidateKeySize: number, cipherText: Buffer): number {
   // dos muestras por cada vuelta.
   const sliceSize = 2 * candidateKeySize
 
+  // ¿Cuantos trozos de tamaño "sliceSize" hay en Buffer?
+  // Ejemplos: si el tamaño de cipherText fuese 100...
+  //    - candidateKeySize == 2: tendría 25 cachos de tamaño 4
+  //    - candidateKeySize == 7: tendría 7 cachos enteros de tamaño 14
+  //    - candidateKeySize == 19: tendría 2 cachos enteros de tamaño 38
+  //
+  // De cada uno de estos trozos, obtendremos a su vez 2 trozos cuya
+  // "hammingDistance" compararemos.
+  const numSlices = 1
+
   let score = 0
-  const numSlices = 1 // ¿Cuantos trozos de tamaño "sliceSize" hay en Buffer?
 
   for (let i = 0; i < numSlices; i++) {
-    // Extraer un trozos de tamaño sliceSize de "cipherText" y dividirlo en 2.
+    // Extraemos dos trozos de tamaño sliceSize de "cipherText" por iteración.
     const slice1 = cipherText.subarray(0, 0)
     const slice2 = cipherText.subarray(0, 0)
 
-    // Calculamos la hamming distance de los dos trozos
+    // Calculamos la hamming distance de esos dos trozos
     const partialScore = hammingDistance(slice1, slice2)
 
     // Dos trozos de tamaño 5 tendrán potencialmente mas score que dos trozos
     // de tamaño 10 porque hacen comparaciones entre más caracteres.
     // Por ello, normalizamos partialScore para hacerlo independiente del
-    // tamaño de los trozos.
+    // tamaño de los trozos dividiendolo entre el tamaño de buffer comparado.
     score = 0
   }
 
   // A  mayor "candidateKeySize", menos trozos podremos sacar del buffer
   // y por tanto, menor score acumulado potencialmente.
-  // Necesitaremos normalizar la puntuación devuelta.
+  // Necesitaremos normalizar la puntuación devuelta una vez más.
   // Para ello, uniformizaremos el score entre llamadas dividiendo la
   // puntuación total entre el número de trozos analizados.
   return 0
@@ -112,19 +137,20 @@ function sliceVigenereCipherText(
 const fileText = null
 const cipherText = Buffer.from(fileText.replace("\n", ""), "base64")
 
+// Calculamos puntuaciones para cada longitud de clave posible.
 const candidateSizes = []
 for (let i = 2; i < 100; i++) {
   candidateSizes.push([i, scoreKeySize(i, cipherText)])
 }
 
-// Ordenamos de más a menos probables
+// Ordenamos de longitudes más probables a las menos probables.
 candidateSizes.sort((a, b) => a[1] - b[1])
 
 // Calculamos las claves probables para los 5 tamaños mas probables.
 // Pista: podemos usar slice() para quedarnos con ellas.
 // Para cada una, seguimos el proceso del ejercicio 5:
 //   1. sliceVigenereCipherText
-//   2. findMostLikelyKeyForLanguage para cada letra de la clave
+//   2. findLikelyKey para cada letra de la clave
 //   3. Unimos las letras candidatas
 const bestCandidateKeys = []
 
