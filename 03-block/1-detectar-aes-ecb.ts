@@ -10,18 +10,28 @@ import { Buffer } from "node:buffer"
 
 const BLOCK_SIZE = 16
 
-type ArrayDeBloques = Array<Buffer<ArrayBuffer>>
-
 async function readCipherTexts(
   filename: string,
 ): Promise<Array<Buffer<ArrayBuffer>>> {
 }
 
-function toArrayOfBlocks(ct: Buffer<ArrayBuffer>): ArrayDeBloques {
+const equalBlock = (
+  data: Buffer,
+  data2: Buffer,
+  startsAt: number,
+  startsAt2: number,
+) => {
+  for (let i = 0; i < BLOCK_SIZE; i++) {
+    if (data[startsAt + i] !== data2[startsAt2 + i]) {
+      return false
+    }
+  }
+  return true
 }
 
 const ciphertexts = await readCipherTexts("1-detectar-aes-ecb/ciphertexts.txt")
-const ciphertextsInBlocks = ciphertexts.map(toArrayOfBlocks)
 
-// Para cada par de CTs, id comprobando si cada bloque de un CT coincide
-// con algún bloque del otro CT.+
+// Para cada bloque en cada CT:
+//   1. Comprobar si otro bloque del mismo CT es igual
+//   2. Para el resto de CTs, comprobar si tienen algún bloque que sea igual
+// Mostrar por consola qué bloques de qué CTs son iguales.
