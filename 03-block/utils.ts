@@ -63,4 +63,10 @@ function toBuffer(number: bigint, byteLength: number = 16): Buffer {
   return Buffer.from(hexStr, "hex")
 }
 
-export { aesDec, aesEnc, toBuffer }
+function toBigInt(buffer: Uint8Array): bigint {
+  return BigInt(
+    "0x" + Buffer.from(buffer).toString("hex"),
+  )
+}
+
+export { aesDec, aesEnc, toBigInt, toBuffer }
