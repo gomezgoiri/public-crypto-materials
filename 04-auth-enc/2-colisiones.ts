@@ -40,7 +40,7 @@ for (let numBits = 8; numBits <= 20; numBits++) {
   let i = 1
   let collision: Uint8Array = new Uint8Array(0)
 
-  // Buscar colisiones y contar número de intentos necesitados:
+  // Buscad colisiones y contar número de intentos necesitados:
 
   console.log(
     `\tColisión encontrada (en ${i} intentos):`.padEnd(50),
