@@ -1,0 +1,138 @@
+/**
+ * En cada operación de exponente, se calcula su módulo.
+ * El resultado será el mismo pero por el camino el tamaño del número no crecerá tanto.
+ *
+ * base**exp % mod === ((base * base % mod) ... * base % mod)
+ *
+ * @returns base**exp % mod
+ */
+function potenciaV1(
+  base: bigint,
+  exp: bigint,
+  mod: bigint,
+): bigint {
+  return 1n
+}
+
+/**
+ * En cada operación de exponente, se calcula su módulo.
+ * El resultado será el mismo pero por el camino el tamaño del número no crecerá tanto.
+ *
+ * Además, no necesitamos usar tantas multiplicaciones como en la función anterior.
+ *
+ *  Principio que seguimos:
+ *
+ *  65537 = 2^16 + 1
+ *  65537 = (en binario) 1 0000 0000 0000 0001
+ *  B^65537 = B^(2^(16)+1) = B^(2^16) * B^(2^0) = B^(2^16) * B^1 = B^(2^16) * B
+ *
+ *  65553 = (en binario) 1 0000 0000 0001 0001
+ *  B^65553 = B^(2^(16)+2^4+1) = B^(2^16) * B^(2^4) * B^(2^0) = B^(2^16) * B^(2^4) * B
+ *
+ * @returns base**exp % mod
+ */
+function potenciaV2(
+  base: bigint,
+  exp: bigint,
+  mod: bigint,
+): bigint {
+  let result = 1n
+  let multNecesarias = 0n
+  let bitNumber = 0n
+  let modExp = exp
+
+  // TODO implementar
+
+  const diffMultiplicaciones = multNecesarias - exp
+  console.log(
+    `¡Haciendolo de este modo necesitamos aún ${diffMultiplicaciones} multiplicaciones más!`,
+  )
+
+  return result
+}
+
+/**
+ * En cada operación de exponente, se calcula su módulo.
+ * El resultado será el mismo pero por el camino el tamaño del número no crecerá tanto.
+ *
+ * Además, no necesitamos usar tantas multiplicaciones como en la función anterior.
+ *
+ * Principio que seguimos:
+ *
+ *   65553 = (en binario) 1 0000 0000 0001 0001
+ *   B^65553 = B^(2^(16)+2^4+1) = B^(2^16) * B^(2^4) * B^(2^0) = B^(2^16) * B^(2^4) * B
+ *
+ * Mejora para ahorrar en multiplicaciones:
+ *    B^2 = B * B
+ *    B^3 = (B^2) * B
+ *    B^4 = (B^3) * B
+ *    ...
+ *    B^16 = (B^15) * B
+ *
+ * Para 65553 necesitamos 16+3 multiplicaciones (y sus correspondientes mods).
+ * Para 65537: 16+2.
+ *
+ * @returns base**exp % mod
+ */
+function potenciaV3(
+  base: bigint,
+  exp: bigint,
+  mod: bigint,
+): bigint {
+  let result = 1n
+  let multNecesarias = 0n
+
+  // TODO implementar
+
+  console.log(
+    "Multiplicaciones necesarias con la tercera versión:",
+    multNecesarias,
+  )
+
+  return result
+}
+
+const base = 5n // Número a cifrar
+// Dos ejemplos de claves RSA
+const exponenteE = 64n
+const exponenteD =
+  247237910686454437164831170462806679111853035953631171894928122329172297060019836054308855435362415752999886832572018613086849939782341805108768268596355290714639446353967277662196726581515734249340086414055932666461294531853337202379417557587040523237643863657201405638135074597137697251287867079734132905006589708687457142361466685566580325802268099360099914336598612267961058061703999727909159288938271616077484057410973963626053645827336517524050491258075533152068981887024769240423146217730826395973669182716690761072124980037612859621997946498560160049359213030650456353550461306896402415227584553896513495174575811708016247700019527107062158604679339761068639470059355371266367409236816222822285394525269489255708621434474844227069977637434995427603853335305240871442799411583845662331181556876352004506155770143607059786622487913334998210362319645018525106748523057974333461879118325052478285622711750997349177087066672354564601007560815929421731480156259102686053569698228333928995913445071917138706023859619635397758844656094167573576856213315964715974134182069058342227065000810275185386810655772516733414524622034226673862515572684517798961616584806216809349385793953612878189095864580873347099507636192856256247053219649n
+const modulo =
+  904551496268529249621589930141291873441272395315867030228208806625744701190337743286509208879994788209923161019721564441794946938174249700296619551108096727938666074677605843585518163901791809049238052996035485913128669666391568147844575920927922445789396856612628176257827186058874184377695134528249643733345440168494941033827021837323562486021506415885829737390591372310911844034494223757493584118748814096068222669041645768668602567218564916483765815082928388108476797070839183928410190011244636270469846325445417429151111193922013843635732675692298175021205534773055264782149086287616229837926098861648847481340772269472536558144588120024617115471575538324395630750122680613572944988202764360465734594836703919840868212670852199699582701500238089131185032303500729445407391660761675601215648527217593729725604154545348651289118589711147152415728248507584332654992265240382565768829727458342105374008065556706374579484139409526603850037220488973434392711175420302262603514398881144604446193864672703992941653921088327438494047435381816504293839091692610991861744312548222034349533315480597624202793580165727763829011286431650437932020618185670466623005912264935814795888663089783354146726755724988713718736855829143973669175578189n
+
+// Versión 0, exponente E
+// Capaz de computarlo, pero ya es un número inmenso
+const baseEV0 = base ** exponenteE
+console.log(
+  `Base a la e es un número entero de ${
+    String(baseEV0).length
+  } cifras decimales`,
+)
+const potEV0 = baseEV0 % modulo
+
+// Versión 0, exponente D
+try {
+  console.log(base ** exponenteD)
+} catch (err) {
+  console.error(
+    "Base al exponente falla porque no podemos trabajar con un número tan grande en Javascript:",
+    err.message,
+  )
+}
+
+const potEV1 = await potenciaV1(base, exponenteE, modulo)
+if (potEV1 !== potEV0) {
+  throw new Error("Potencia mal calculada")
+} else {
+  console.log("Con exponentes pequeños funciona razonablemente rápido")
+}
+
+// Buena suerte ejecutando esto en un tiempo razonable...
+// potenciaV1(base, exponenteD, modulo)
+
+// Esta versión es aún peor...
+// potenciaV2(base, exponenteD, modulo)
+
+// ¡Por fin llegamos a la versión buena!
+const val = potenciaV3(base, exponenteD, modulo)
+console.log("Usando un exponente enorme, obtenemos este resultado:", val)
