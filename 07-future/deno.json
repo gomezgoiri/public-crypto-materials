@@ -1,0 +1,8 @@
+{
+  "fmt": {
+    "semiColons": false
+  },
+  "imports": {
+    "@noble/post-quantum": "jsr:@noble/post-quantum@^0.4.1"
+  }
+}

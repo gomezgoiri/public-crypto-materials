@@ -1,0 +1,23 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@noble/hashes@1.8.0": "1.8.0",
+    "jsr:@noble/post-quantum@~0.4.1": "0.4.1"
+  },
+  "jsr": {
+    "@noble/hashes@1.8.0": {
+      "integrity": "b52a2fcb4d02f8d8137871564a31f1ee9e2b0d15eedabbf32d2f7333f0abc939"
+    },
+    "@noble/post-quantum@0.4.1": {
+      "integrity": "c347ef65f32e1bc6030dbd3ac6e8087765e932a052ac664cb2f46f644c827466",
+      "dependencies": [
+        "jsr:@noble/hashes"
+      ]
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@noble/post-quantum@~0.4.1"
+    ]
+  }
+}
