@@ -56,19 +56,34 @@ const SHA1_LIMIT = (2n ** 61n) - 1n
 // https://datatracker.ietf.org/doc/html/rfc3447#section-9.1.1
 async function encodeEmsaPss(
   message: Buffer,
-  salt?: Buffer,
+  proposedSalt?: Buffer,
 ): Promise<EmAndSalt> {
+  const emLen = Math.floor((KEY_LENGTH - 1) / 8)
+
   if (message.length > SHA1_LIMIT) {
     throw new Error("Message too long")
   }
 
-  // h1 <- hash(m)
-  // Genera salt aleatorio
-  // Genera EM:
-  //  1. m2 <- padding (0x0...) || h || salt
-  //  2. h2 <- hash(m2)
-  //  3. mask <- mgf1SHA1(h2)
-  //  4. em <- (h2 xor mask) || 0xbc
+  // mHash <- hash(m)
+  const mHash = null
+
+  // Genera salt aleatorio de sLen si salt es undefined
+  const salt = null
+
+  if (emLen < mHash.byteLength + salt.byteLength + 1) {
+    throw new Error("Encoding error")
+  }
+
+  // m2 <- 0x00..0000 (8 bytes de ceros) || mHash || salt
+  // h <- hash(m2)
+
+  // db es un buffer de tamaño: emLen - hLen - 1
+  // db <- 00...0 || 0x01 || salt
+  // dbMask <- mgf1SHA1(h2, db.length)
+  // maskedDB <- db xor dbMask
+  // maskedDB[0] <- 0
+
+  // em <- maskedDB || h || 0xbc
 
   return
 }
