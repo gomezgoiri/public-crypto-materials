@@ -171,6 +171,10 @@ async function verifyEmsaPss(
     }
   }
 
+  if (db[0] !== 1) {
+    return false
+  }
+
   // 11. Let salt be the last sLen octets of DB.
   const salt = db.subarray(db.length - SALT_LENGTH)
 
