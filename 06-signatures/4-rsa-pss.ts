@@ -12,6 +12,12 @@ import { powermod, toNumber } from "./utils.ts"
 import { randomBytes } from "node:crypto"
 
 const KEY_LENGTH = 2048
+const HASH_LENGTH = 20 // SHA-1 has 160 bits
+const SALT_LENGTH = 20
+const TRAILER_FIELD = 0xbc
+
+// maximal bit length, at least 8hLen + 8sLen + 9
+const EM_BITS = 8 * HASH_LENGTH + 8 * SALT_LENGTH + 9
 
 async function mgf1SHA1(
   seed: Uint8Array,
@@ -49,18 +55,16 @@ async function mgf1SHA1(
   return ret
 }
 
-type EmAndSalt = { em: Buffer; salt: Uint8Array }
-
-const SHA1_LIMIT = (2n ** 61n) - 1n
-
 // https://datatracker.ietf.org/doc/html/rfc3447#section-9.1.1
 async function encodeEmsaPss(
   message: Buffer,
   proposedSalt?: Buffer,
-): Promise<EmAndSalt> {
-  const emLen = Math.floor((KEY_LENGTH - 1) / 8)
+): Promise<Buffer> {
+  // emLen = ceil(emBits/8)
+  const emLen = Math.ceil(EM_BITS / 8)
 
-  if (message.length > SHA1_LIMIT) {
+  const sha1Limit = (2n ** 61n) - 1n
+  if (message.length > sha1Limit) {
     throw new Error("Message too long")
   }
 
@@ -81,21 +85,122 @@ async function encodeEmsaPss(
   // db <- 00...0 || 0x01 || salt
   // dbMask <- mgf1SHA1(h2, db.length)
   // maskedDB <- db xor dbMask
-  // maskedDB[0] <- 0
+
+  // Pone los bitsWhichMustBeZero primeros bits del primer byte
+  // empezando por la izquierda a cero
+  const bitsWhichMustBeZero = (8 * emLen) - EM_BITS
+  const zeroMask = 0xff >> bitsWhichMustBeZero
+  // maskedDB[0] <- maskedDB[0] & zeroMask
 
   // em <- maskedDB || h || 0xbc
 
   return
 }
 
-type SignatureAndSalt = { signature: bigint; salt: Uint8Array }
+// https://datatracker.ietf.org/doc/html/rfc3447#section-9.1.2
+async function verifyEmsaPss(
+  message: Buffer,
+  emNumber: bigint,
+): Promise<boolean> {
+  const emLen = Math.ceil(EM_BITS / 8)
+  const emNumberHex = emNumber.toString(16)
+  // Si metes un hex impar a Buffer.from(), ignorará el último y aparecerán desplazados
+  const emNumberEvenHex = emNumberHex.length % 2 === 0
+    ? emNumberHex
+    : "0" + emNumberHex
+  const tempEm = Buffer.from(emNumberEvenHex, "hex")
+  const em = Buffer.alloc(emLen)
+  tempEm.copy(em, em.length - tempEm.length)
+
+  // 1. If the length of M is greater than the input limitation for the
+  // hash function (2^61 - 1 octets for SHA-1), output "inconsistent"
+  // and stop.
+  if (message.length > SHA1_LIMIT) {
+    return false
+  }
+
+  // 2. Let mHash = Hash(M), an octet string of length hLen.
+  const mHash = Buffer.from(await crypto.subtle.digest("SHA-1", message))
+
+  // 3. If emLen < hLen + sLen + 2, output "inconsistent" and stop.
+  if (emLen < HASH_LENGTH + SALT_LENGTH + 2) {
+    return false
+  }
+
+  // 4. If the rightmost octet of EM does not have hexadecimal value
+  // 0xbc, output "inconsistent" and stop.
+  if (em[em.length - 1] !== TRAILER_FIELD) {
+    return false
+  }
+
+  // 5. Let maskedDB be the leftmost emLen - hLen - 1 octets of EM, and
+  // let H be the next hLen octets.
+  const maskedDB = em.subarray(0, emLen - HASH_LENGTH - 1)
+  const h = em.subarray(emLen - HASH_LENGTH - 1, emLen - 1)
+
+  // 6. If the leftmost 8emLen - emBits bits of the leftmost octet in
+  // maskedDB are not all equal to zero, output "inconsistent" and stop.
+  const bitsWhichMustBeZero = (8 * emLen) - EM_BITS
+  const oneMask = 0xff & (0xff << (8 - bitsWhichMustBeZero))
+  if ((maskedDB[0] & oneMask) !== 0) {
+    return false
+  }
+
+  // 7. Let dbMask = MGF(H, emLen - hLen - 1).
+  const dbMask = await mgf1SHA1(h, emLen - HASH_LENGTH - 1)
+
+  // 8. Let DB = maskedDB xor dbMask.
+  const db = Buffer.alloc(maskedDB.byteLength)
+  for (let i = 0; i < db.byteLength; i++) {
+    db[i] = maskedDB[i] ^ dbMask[i]
+  }
+
+  // 9. Set the leftmost 8emLen - emBits bits of the leftmost octet in DB
+  // to zero.
+  const zeroMask = 0xff >> bitsWhichMustBeZero
+  db[0] = db[0] & zeroMask
+
+  // 10. If the emLen - hLen - sLen - 2 leftmost octets of DB are not zero
+  // or if the octet at position emLen - hLen - sLen - 1 (the leftmost
+  // position is "position 1") does not have hexadecimal value 0x01,
+  // output "inconsistent" and stop.
+  const zeroBytes = emLen - HASH_LENGTH - SALT_LENGTH - 2
+  for (let i = 0; i < zeroBytes; i++) {
+    if (db[i] !== 0) {
+      return false
+    }
+  }
+
+  // 11. Let salt be the last sLen octets of DB.
+  const salt = db.subarray(db.length - SALT_LENGTH)
+
+  // 12. Let
+  //      M' = (0x)00 00 00 00 00 00 00 00 || mHash || salt ;
+  // M' is an octet string of length 8 + hLen + sLen with eight
+  // initial zero octets.
+  const m2 = Buffer.alloc(8 + HASH_LENGTH + SALT_LENGTH)
+  mHash.copy(m2, m2.length - HASH_LENGTH - SALT_LENGTH)
+  salt.copy(m2, m2.length - SALT_LENGTH)
+
+  // 13. Let H' = Hash(M'), an octet string of length hLen.
+  const hPrima = Buffer.from(await crypto.subtle.digest("SHA-1", m2))
+
+  // 14. If H = H', output "consistent." Otherwise, output "inconsistent."
+  for (let i = 0; i < h.length; i++) {
+    if (h[i] !== hPrima[i]) {
+      return false
+    }
+  }
+
+  return true
+}
 
 async function signRSAPSS(
   message: Buffer,
   d: bigint,
   N: bigint,
   proposedSalt?: Buffer,
-): Promise<SignatureAndSalt> {
+): Promise<bigint> {
 }
 
 async function verifyRSAPSS(
